@@ -495,8 +495,17 @@ Configuration in `config.json`:
 {
   "AntiCheat": {
     "Enabled": true,
+    "BanIpFromGame": true,
+    "AllowCheatingHosts": "Never",
     "EnableGameFlowChecks": true,
-    "EnableRoleChecks": true
+    "EnableMustBeHostChecks": true,
+    "EnableInvalidObjectChecks": true,
+    "EnableColorLimitChecks": true,
+    "EnableNameLimitChecks": true,
+    "EnableOwnershipChecks": true,
+    "EnableRoleChecks": true,
+    "EnableTargetChecks": true,
+    "ForbidProtocolExtensions": true
   }
 }
 ```
@@ -652,11 +661,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MyPlugin
 {
-    [ImpostorPlugin(
-        package: "com.example.myplugin",
-        name: "My Plugin",
-        author: "Your Name",
-        version: "1.0.0")]
+    [ImpostorPlugin("com.example.myplugin")]
     public class MyPlugin : PluginBase
     {
         private readonly ILogger<MyPlugin> _logger;
@@ -680,6 +685,8 @@ namespace MyPlugin
     }
 }
 ```
+
+**Note:** The `ImpostorPlugin` attribute takes a single string parameter (the plugin ID). The multi-parameter constructor with name, author, and version is obsolete.
 
 ### Plugin with Event Listeners
 
@@ -740,6 +747,27 @@ public class MyEventListener : IEventListener
 3. Build plugin DLL
 4. Copy to server's `plugins/` directory
 5. Restart server
+
+### Actual Example Plugin
+
+The repository includes a comprehensive example plugin at `src/Impostor.Plugins.Example/` that demonstrates:
+
+- Plugin initialization with game creation in `EnableAsync()`
+- Multiple event listeners organized by category:
+  - `GameEventListener.cs` - Game lifecycle events
+  - `PlayerEventListener.cs` - Player actions (spawn, chat, voting, tasks, venting)
+  - `MeetingEventListener.cs` - Meeting/voting events
+  - `ClientEventListener.cs` - Client connection events
+- Using dependency injection to access server services (IGameManager, ILogger)
+- Modifying player properties (color, hat, skin, pet)
+- Interacting with game settings
+- Handling cosmetics using string identifiers (e.g., `"hat_pk05_Cheese"`, `"skin_Police"`)
+
+**Key takeaways from the example:**
+- Event listeners are separate classes registered in `ExamplePluginStartup`
+- Multiple event handlers can be in one listener class
+- Event handlers can be `void`, `ValueTask`, or `async ValueTask`
+- Player cosmetics use string IDs, not numeric enums (updated from older versions)
 
 For complete guide, see `docs/Writing-a-plugin.md`.
 
