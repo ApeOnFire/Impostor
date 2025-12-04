@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Impostor.Api.Games;
 using Impostor.Api.Innersloth;
 using Impostor.Api.Innersloth.GameOptions;
+using Impostor.Api.Net;
 using Impostor.Api.Net.Messages;
 using Impostor.Api.Net.Messages.C2S;
 using Impostor.Hazel;
@@ -25,19 +26,17 @@ namespace Impostor.Client.App
 
             var writeHandshake = MessageWriter.Get(MessageType.Reliable);
 
-            // Handshake with current game version (2025.10.14)
-            var gameVersion = new GameVersion(2025, 10, 14, 0);
-            writeHandshake.Write(gameVersion);
-            writeHandshake.Write("AeonLucid");
-            writeHandshake.Write((uint)0); // lastNonceReceived (always 0 since 2021.11.9)
-            writeHandshake.Write((uint)Language.English); // language
-            writeHandshake.Write((byte)QuickChatModes.FreeChatOrQuickChat); // chatMode
+            // Start with a simpler protocol version for testing
+            // Using 2021.7.20 which requires version+name+nonce+language+chatMode but no platform data
+            var gameVersion = new GameVersion(2021, 7, 20, 0);
 
-            // Platform-specific data (empty message)
-            writeHandshake.StartMessage(0);
-            writeHandshake.EndMessage();
-            writeHandshake.Write((int)CrossplayFlags.All); // crossplayFlags
-            writeHandshake.Write((byte)0); // unknown purpose field
+            Log.Information("Connecting with game version {Version} (value: {Value})", gameVersion, gameVersion.Value);
+
+            writeHandshake.Write(gameVersion.Value); // Game version as int32
+            writeHandshake.Write("AeonLucid");       // Player name
+            writeHandshake.Write((uint)0);           // lastNonceReceived (always 0)
+            writeHandshake.Write((uint)Language.English);  // language
+            writeHandshake.Write((byte)QuickChatModes.FreeChatOrQuickChat); // chatMode
 
             var writeGameCreate = MessageWriter.Get(MessageType.Reliable);
 
