@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Impostor.Api.Games;
 using Impostor.Api.Innersloth;
 using Impostor.Api.Innersloth.GameOptions;
+using Impostor.Api.Net;
 using Impostor.Api.Net.Messages;
 using Impostor.Api.Net.Messages.C2S;
 using Impostor.Hazel;
@@ -25,19 +26,27 @@ namespace Impostor.Client.App
 
             var writeHandshake = MessageWriter.Get(MessageType.Reliable);
 
-            // Handshake with current game version (2025.10.14)
+            // Use modern protocol version (2025.10.14)
             var gameVersion = new GameVersion(2025, 10, 14, 0);
-            writeHandshake.Write(gameVersion);
-            writeHandshake.Write("AeonLucid");
-            writeHandshake.Write((uint)0); // lastNonceReceived (always 0 since 2021.11.9)
-            writeHandshake.Write((uint)Language.English); // language
+
+            Log.Information("Connecting with game version {Version} (value: {Value})", gameVersion, gameVersion.Value);
+
+            writeHandshake.Write(gameVersion.Value); // Game version as int32
+            writeHandshake.Write("AeonLucid");       // Player name
+            writeHandshake.Write((uint)0);           // lastNonceReceived (always 0)
+            writeHandshake.Write((uint)Language.English);  // language
             writeHandshake.Write((byte)QuickChatModes.FreeChatOrQuickChat); // chatMode
 
-            // Platform-specific data (empty message)
-            writeHandshake.StartMessage(0);
+            // Platform-specific data (for version >= 2021.11.9)
+            // Write a message with platform type as tag and platform name as data
+            writeHandshake.StartMessage((byte)Platforms.StandaloneItch);
+            writeHandshake.Write("PC"); // Platform name
             writeHandshake.EndMessage();
+
             writeHandshake.Write((int)CrossplayFlags.All); // crossplayFlags
-            writeHandshake.Write((byte)0); // unknown purpose field
+
+            // Unknown field (for version >= 2021.12.14)
+            writeHandshake.Write((byte)0); // purpose unknown, hardcoded to 0
 
             var writeGameCreate = MessageWriter.Get(MessageType.Reliable);
 
