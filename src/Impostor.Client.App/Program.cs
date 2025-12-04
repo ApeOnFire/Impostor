@@ -26,9 +26,8 @@ namespace Impostor.Client.App
 
             var writeHandshake = MessageWriter.Get(MessageType.Reliable);
 
-            // Start with a simpler protocol version for testing
-            // Using 2021.7.20 which requires version+name+nonce+language+chatMode but no platform data
-            var gameVersion = new GameVersion(2021, 7, 20, 0);
+            // Use modern protocol version (2025.10.14)
+            var gameVersion = new GameVersion(2025, 10, 14, 0);
 
             Log.Information("Connecting with game version {Version} (value: {Value})", gameVersion, gameVersion.Value);
 
@@ -37,6 +36,17 @@ namespace Impostor.Client.App
             writeHandshake.Write((uint)0);           // lastNonceReceived (always 0)
             writeHandshake.Write((uint)Language.English);  // language
             writeHandshake.Write((byte)QuickChatModes.FreeChatOrQuickChat); // chatMode
+
+            // Platform-specific data (for version >= 2021.11.9)
+            // Write a message with platform type as tag and platform name as data
+            writeHandshake.StartMessage((byte)Platforms.StandaloneItch);
+            writeHandshake.Write("PC"); // Platform name
+            writeHandshake.EndMessage();
+
+            writeHandshake.Write((int)CrossplayFlags.All); // crossplayFlags
+
+            // Unknown field (for version >= 2021.12.14)
+            writeHandshake.Write((byte)0); // purpose unknown, hardcoded to 0
 
             var writeGameCreate = MessageWriter.Get(MessageType.Reliable);
 
